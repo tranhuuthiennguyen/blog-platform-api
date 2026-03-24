@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.thiennth</groupId>
-	<artifactId>boilerplate</artifactId>
+	<artifactId>blogplatformapi</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>boilderplate</name>
+	<name>blogplatformapi</name>
 	<description/>
 	<url/>
 	<licenses>
