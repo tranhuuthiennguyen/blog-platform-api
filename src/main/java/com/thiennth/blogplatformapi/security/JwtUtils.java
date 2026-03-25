@@ -5,11 +5,9 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import com.thiennth.blogplatformapi.config.JwtProperties;
-import com.thiennth.blogplatformapi.model.User;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -17,9 +15,11 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@Getter
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -27,22 +27,18 @@ public class JwtUtils {
     
     private final JwtProperties jwtProperties;
 
-    public String generateAccessToken(Authentication authentication) {
-        User userPrincipal = (User) authentication.getPrincipal();
-
+    public String generateAccessToken(String email) {
         return Jwts.builder()
-            .subject(userPrincipal.getEmail())
+            .subject(email)
             .issuedAt(new Date())
             .expiration(new Date((new Date()).getTime() + jwtProperties.access().expiration()))
             .signWith(key(jwtProperties.access().secret()))
             .compact();
     }
 
-    public String generateRefreshToken(Authentication authentication) {
-        User userPrincipal = (User) authentication.getPrincipal();
-
+    public String generateRefreshToken(String email) {
         return Jwts.builder()
-            .subject(userPrincipal.getEmail())
+            .subject(email)
             .issuedAt(new Date())
             .expiration(new Date((new Date()).getTime() + jwtProperties.refresh().expiration()))
             .signWith(key(jwtProperties.refresh().secret()))
@@ -56,6 +52,11 @@ public class JwtUtils {
     public String extractEmailFromAccessToken(String token) {
         return Jwts.parser().verifyWith((SecretKey) key(jwtProperties.access().secret())).build()
             .parseSignedClaims(token).getPayload().getSubject();
+    }
+
+    public long extractExpirationFromAccessToken(String token) {
+        return Jwts.parser().verifyWith((SecretKey) key(jwtProperties.access().secret())).build()
+            .parseSignedClaims(token).getPayload().getExpiration().getTime();
     }
 
     public boolean validateAccessToken(String token) {

@@ -14,6 +14,7 @@ public class ErrorResponse extends HttpResponse {
 
     public ErrorResponse(Builder builder) {
         super(builder);
+        if (this.success == null) this.success = false;
         this.error = builder.error;
         this.subErrors = builder.subErrors;
     }

@@ -11,6 +11,7 @@ public class ApiResponse<T> extends HttpResponse {
 
     public ApiResponse(Builder<T> builder) {
         super(builder);
+        if (this.success == null) this.success = true;
         this.data = builder.data;
     }
 

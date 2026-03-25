@@ -4,6 +4,8 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -52,6 +54,7 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "role")
+    @JdbcType(value = PostgreSQLEnumJdbcType.class)
     private Role role;
 
     @Column(columnDefinition = "TEXT")
@@ -72,7 +75,16 @@ public class User implements UserDetails {
 
     public enum Role {
         USER,
-        ADMIN
+        ADMIN;
+
+        public static Role fromValue(String value) {
+            for (Role role : values()) {
+                if (role.name().equalsIgnoreCase(value)) {
+                    return role;
+                }
+            }
+            throw new IllegalArgumentException("Unknown role: " + value);
+        }
     }
 
     @Override

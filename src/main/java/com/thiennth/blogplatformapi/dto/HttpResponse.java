@@ -12,7 +12,7 @@ import lombok.Getter;
 @Getter
 public abstract class HttpResponse {
     
-    protected final Boolean success;
+    protected       Boolean success;
     protected final int statusCode;
     protected final String message;
     protected final String correlationId;
