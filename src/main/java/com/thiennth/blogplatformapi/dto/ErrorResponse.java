@@ -1,64 +1,46 @@
 package com.thiennth.blogplatformapi.dto;
 
-import java.util.List;
-
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-import lombok.Getter;
+import java.util.List;
 
 @Getter
 public class ErrorResponse extends HttpResponse {
 
-    private final String error;
+    private final String       error;
     private final List<String> subErrors;
 
-    public ErrorResponse(Builder builder) {
-        super(builder);
-        if (this.success == null) this.success = false;
-        this.error = builder.error;
-        this.subErrors = builder.subErrors;
+    private ErrorResponse(HttpStatus status, String message,
+                          String error, List<String> subErrors) {
+        super(false, status.value(), message);
+        this.error     = error;
+        this.subErrors = subErrors;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static ErrorResponse of(HttpStatus status, String message, String error) {
+        return new ErrorResponse(status, message, error, List.of());
     }
 
-    public static class Builder extends HttpResponse.Builder<ErrorResponse> {
+    public static ErrorResponse of(HttpStatus status, String message,
+                                   String error, List<String> subErrors) {
+        return new ErrorResponse(status, message, error, subErrors);
+    }
 
-        private String error;
-        private List<String> subErrors;
+    public static ErrorResponse badRequest(String message, String error) {
+        return of(HttpStatus.BAD_REQUEST, message, error);
+    }
 
-        @Override
-        public Builder success(Boolean success) {
-            super.success(success);
-            return this;
-        }
+    public static ErrorResponse badRequest(String message, String error,
+                                           List<String> subErrors) {
+        return of(HttpStatus.BAD_REQUEST, message, error, subErrors);
+    }
 
-        @Override
-        public Builder statusCode(HttpStatus status) {
-            super.statusCode(status);
-            return this;
-        }
+    public static ErrorResponse notFound(String message, String error) {
+        return of(HttpStatus.NOT_FOUND, message, error);
+    }
 
-        @Override
-        public Builder message(String message) {
-            super.message(message);
-            return this;
-        }
-
-        public Builder error(String error) {
-            this.error = error;
-            return this;
-        }
-
-        public Builder subErrors(List<String> subErrors) {
-            this.subErrors = subErrors;
-            return this;
-        }
-        
-        @Override
-        public ErrorResponse build() {
-            return new ErrorResponse(this);
-        }
+    public static ErrorResponse internalError(String message, String error) {
+        return of(HttpStatus.INTERNAL_SERVER_ERROR, message, error);
     }
 }

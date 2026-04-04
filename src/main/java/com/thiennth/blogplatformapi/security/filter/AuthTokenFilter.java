@@ -52,10 +52,10 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                         userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("User with email {} has been authenticated", SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+                log.info("User with email [{}] has been authenticated", email);
             }
         } catch (Exception e) {
-            log.error("Cannot set user authentication: {}", e.getMessage());
+            log.error("Cannot set user authentication: [{}]", e.getMessage());
         }
         filterChain.doFilter(request, response);
     }

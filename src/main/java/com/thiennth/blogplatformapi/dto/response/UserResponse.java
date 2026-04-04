@@ -1,6 +1,6 @@
 package com.thiennth.blogplatformapi.dto.response;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 import com.thiennth.blogplatformapi.model.User;
 
@@ -12,8 +12,8 @@ public record UserResponse(
     String bio,
     String avatarUrl,
     Boolean isActive,
-    OffsetDateTime createdAt,
-    OffsetDateTime updatedAt
+    Instant createdAt,
+    Instant updatedAt
 ) {
     public static UserResponse from(User user) {
         return new UserResponse(

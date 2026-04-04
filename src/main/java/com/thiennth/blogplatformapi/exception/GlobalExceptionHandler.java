@@ -25,81 +25,44 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAuthorizationDenied(AuthorizationDeniedException ex) {
-        log.warn(ex.getMessage());
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message(ex.getMessage())
-                .error(status.getReasonPhrase())
-                .build());
+    @ExceptionHandler(ForBiddenActionException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenAction(ForBiddenActionException ex) {
+        return respond(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedException ex) {
+    @ExceptionHandler({
+        BadRequestException.class,
+        AuthorizationDeniedException.class,
+        UnauthorizedException.class,
+        BadCredentialsException.class,
+        UsernameNotFoundException.class
+    })
+    public ResponseEntity<ErrorResponse> handleUnauthorized(RuntimeException ex) {
         log.warn(ex.getMessage());
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message(ex.getMessage())
-                .error(status.getReasonPhrase())
-                .build());
+        return respond(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
-        log.warn(ex.getMessage());
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message(ex.getMessage())
-                .error(status.getReasonPhrase())
-                .build());
-    }
-
-    @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex) {
-        log.warn(ex.getMessage());
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message(ex.getMessage())
-                .error(status.getReasonPhrase())
-                .build());
-    }
-    
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
         log.warn(ex.getMessage());
-        HttpStatus status = HttpStatus.NOT_FOUND;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .success(false)
-                .statusCode(status)
-                .message(ex.getMessage())
-                .error(status.getReasonPhrase())
-                .subErrors(null)
-                .build());
+        return respond(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
+        log.warn(ex.getMessage());
+        return respond(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         log.warn(ex.getMessage());
-        HttpStatus status = HttpStatus.BAD_REQUEST;
         List<String> subErrors = ex.getBindingResult().getFieldErrors().stream()
-            .map(e -> e.getField() + ": " + e.getDefaultMessage()).toList();
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message("Validation errors")
-                .error(status.getReasonPhrase())
-                .subErrors(subErrors)
-                .build());
+            .map(e -> e.getField() + ": " + e.getDefaultMessage())
+            .toList();
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse.badRequest("Validation errors", HttpStatus.BAD_REQUEST.getReasonPhrase(), subErrors));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -111,66 +74,35 @@ public class GlobalExceptionHandler {
             String field = ife.getPath().stream()
                 .map(JsonMappingException.Reference::getFieldName)
                 .collect(Collectors.joining("."));
-            String invalidValue = String.valueOf(ife.getValue());
-            String expectedType = ife.getTargetType().getSimpleName();
             message = "Invalid value '%s' for field '%s', expected type: '%s'"
-                .formatted(invalidValue, field, expectedType);
+                .formatted(String.valueOf(ife.getValue()), field, ife.getTargetType().getSimpleName());
         }
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message(message)
-                .error(status.getReasonPhrase())
-                .build());
-    }
-
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
-        log.warn(ex.getMessage());
-        HttpStatus status = HttpStatus.CONFLICT;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message(ex.getMessage())
-                .error(status.getReasonPhrase())
-                .subErrors(null)
-                .build());
-    }
-
-    @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<ErrorResponse> handleDataAccess(DataAccessException ex) {
-        log.error("Database error: ", ex);
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message("A database error occurred")
-                .error(status.getReasonPhrase())
-                .build());
+        return respond(HttpStatus.BAD_REQUEST, message);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
         log.error("Data integrity violation — likely a missing DTO validation: ", ex);
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message("An unexpected error occurred")
-                .error(status.getReasonPhrase())
-                .build());
+        return respond(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleDataAccess(DataAccessException ex) {
+        log.error("Database error: ", ex);
+        return respond(HttpStatus.INTERNAL_SERVER_ERROR, "A database error occurred");
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnknown(Exception ex) {
         log.error("Unknown error: ", ex);
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-        return ResponseEntity.status(status)
-            .body(ErrorResponse.builder()
-                .statusCode(status)
-                .message("An unknown error occurred")
-                .error(status.getReasonPhrase())
-                .build());
+        return respond(HttpStatus.INTERNAL_SERVER_ERROR, "An unknown error occurred");
+    }
+
+    // ── private helpers ───────────────────────────────────────────────────────
+
+    private ResponseEntity<ErrorResponse> respond(HttpStatus status, String message) {
+        return ResponseEntity
+            .status(status)
+            .body(ErrorResponse.of(status, message, status.getReasonPhrase()));
     }
 }

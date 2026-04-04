@@ -1,10 +1,13 @@
 package com.thiennth.blogplatformapi.model;
 
-import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.ParamDef;
 import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,30 +18,25 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uq_users_email",
+        columnNames = {"email"}
+    )
+)
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class User implements UserDetails {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@FilterDef(
+    name = "deactivateFilter",
+    parameters = @ParamDef(name = "isActive", type = Boolean.class)
+)
+@Filter(name = "deactivateFilter", condition = "is_active = :isActive")
+public class User extends BaseEntity implements UserDetails {
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -53,7 +51,7 @@ public class User implements UserDetails {
     private String lastName;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "role")
+    @Column(nullable = false, columnDefinition = "role")
     @JdbcType(value = PostgreSQLEnumJdbcType.class)
     private Role role;
 
@@ -64,28 +62,81 @@ public class User implements UserDetails {
     private String avatarUrl;
 
     @Column(name = "is_active")
-    @Builder.Default
     private Boolean isActive = true;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    // -------------------------------------------------------------------------
+    // JPA no-arg constructor (package-private; not for application use)
+    // -------------------------------------------------------------------------
+    protected User() {}
 
-    @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
+    // -------------------------------------------------------------------------
+    // Static factory — the ONLY way to create an instance
+    // -------------------------------------------------------------------------
+    public static User of(
+        String email,
+        String password,
+        String firstName,
+        String lastName,
+        Role role,
+        String bio,
+        String avatarUrl,
+        Boolean isActive
+    ) {
+        Objects.requireNonNull(email, "email must not be null");
+        Objects.requireNonNull(password, "password must not be null");
+        Objects.requireNonNull(role, "role must not be null");
+        Objects.requireNonNull(isActive, "isActive must not be null");
 
-    public enum Role {
-        USER,
-        ADMIN;
-
-        public static Role fromValue(String value) {
-            for (Role role : values()) {
-                if (role.name().equalsIgnoreCase(value)) {
-                    return role;
-                }
-            }
-            throw new IllegalArgumentException("Unknown role: " + value);
-        }
+        var entry = new User();
+        entry.email = email;
+        entry.password = password;
+        entry.firstName = firstName;
+        entry.lastName = lastName;
+        entry.role = role;
+        entry.bio = bio;
+        entry.avatarUrl = avatarUrl;
+        entry.isActive = isActive;
+        return entry;
     }
+
+    // -------------------------------------------------------------------------
+    // Domain methods
+    // -------------------------------------------------------------------------
+    public void updateProfile(
+        String firstName,
+        String lastName,
+        String bio,
+        String avatarUrl
+    ) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.bio = bio;
+        this.avatarUrl = avatarUrl;
+    }
+
+    public void changePassword(String password) {
+        Objects.requireNonNull(password, "password must not ben null");
+        this.password = password;
+    }
+
+    public void deactivate() {
+        if (!isEnabled()) {
+            throw new IllegalStateException("Entity already deleted: " + this);
+        }
+        this.isActive = false;
+    }
+
+    public void changeRole(Role role) {
+        Objects.requireNonNull(role, "role must not be null");
+        if (this.role.equals(role)) {
+            throw new IllegalStateException("role already been set");
+        }
+        this.role = role;
+    }
+
+    // -------------------------------------------------------------------------
+    // Implementation of UserDetails
+    // -------------------------------------------------------------------------
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -122,15 +173,27 @@ public class User implements UserDetails {
         return Boolean.TRUE.equals(isActive);
     }
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = OffsetDateTime.now();
-        updatedAt = OffsetDateTime.now();
+    // -------------------------------------------------------------------------
+    // Business key
+    // -------------------------------------------------------------------------
+
+    @Override
+    protected Object domainKey() {
+        return email;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = OffsetDateTime.now();
+    public enum Role {
+        USER,
+        ADMIN;
+
+        public static Role fromValue(String value) {
+            for (Role role : values()) {
+                if (role.name().equalsIgnoreCase(value)) {
+                    return role;
+                }
+            }
+            throw new IllegalArgumentException("Unknown role: " + value);
+        }
     }
 
 }

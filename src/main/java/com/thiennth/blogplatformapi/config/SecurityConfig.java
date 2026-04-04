@@ -2,6 +2,7 @@ package com.thiennth.blogplatformapi.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -44,6 +45,17 @@ public class SecurityConfig {
                     "/api/auth/login",
                     "/api/auth/register",
                     "/api/auth/refresh"
+                ).permitAll()
+                .requestMatchers(HttpMethod.GET,
+                    "/api/users/{id}/**",
+                    "/api/posts",
+                    "/api/posts/{slug}",
+                    "/api/posts/search",
+                    "/api/posts/{id}/likes",
+                    "/api/posts/{postId}/comments",
+                    "/api/tags",
+                    "/api/tags/{slug}",
+                    "/api/tags/{slug}/posts"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

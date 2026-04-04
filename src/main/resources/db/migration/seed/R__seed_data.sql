@@ -4,7 +4,7 @@
 -- USERS  (password = BCrypt of "Password1!")
 -- ============================================================
 INSERT INTO users (email, password, first_name, last_name, role, bio, is_active) VALUES
-('admin@blog.com',   '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Alice',   'Admin',    'ADMIN', 'Platform administrator.',          TRUE),
+('admin@blog.com',   '$2a$12$XAtkdbrXUgVNbnmcl.AWY.qxpRBsB1JJSXbAf2PNNrq2VwW3yfM9q', 'Alice',   'Admin',    'ADMIN', 'Platform administrator.',          TRUE),
 ('john@blog.com',    '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'John',    'Doe',      'USER',  'Full-stack dev. Coffee addict.',   TRUE),
 ('jane@blog.com',    '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Jane',    'Smith',    'USER',  'Spring Boot enthusiast.',          TRUE),
 ('mike@blog.com',    '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Mike',    'Johnson',  'USER',  'Backend engineer, love Postgres.', TRUE),
